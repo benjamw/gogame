@@ -1,0 +1,25 @@
+application: basegame
+version: 1
+runtime: go
+api_version: go1.8
+
+handlers:
+
+# # # # # # # # # #
+# GO ENDPOINTS
+# # # # # # # # # #
+
+# application
+- url: /.*
+  script: _go_app
+  secure: always
+
+
+# # # # # # # # # #
+# STATIC FILES FOR GO
+# # # # # # # # # #
+
+- url: /nothing_to_see_here_move_along/
+  static_dir: email/
+  login: admin
+  application_readable: true

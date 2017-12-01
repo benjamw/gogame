@@ -1,0 +1,40 @@
+package config
+
+var hasLocal bool
+
+func init() {
+	SetGameConfig()
+	setLocalConfig()
+}
+
+func setLocalConfig() {
+	if hasLocal {
+		return
+	}
+	hasLocal = true
+
+	// set local vars here
+
+	// 32 random hex bytes taken from random.org
+	// You should definitely change these...
+	CookieCryptKey = []byte{
+		0xb2, 0xc7, 0xd7, 0xe6, 0xc7, 0x31, 0x5b, 0x68, 0x04, 0x08, 0x1f, 0x2e, 0x9f, 0xb5, 0x23, 0xc9,
+		0x8a, 0xd1, 0x54, 0x4b, 0x4c, 0x3d, 0xeb, 0x9e, 0xe8, 0xbb, 0x9c, 0x94, 0x37, 0xc0, 0xb6, 0x36}
+	// 32 random alphanumeric characters taken from random.org
+	// You should definitely change these...
+	CookieSignatureKey = []byte("V3RyDrx5CLjgewzAM9rLWNto93YsqwzN")
+
+	// 32 random hex bytes taken from random.org
+	// You should definitely change these...
+	EncryptionKey = []byte{
+		0x00, 0x3e, 0x54, 0xb2, 0xb0, 0x41, 0xfd, 0xd2, 0xac, 0x75, 0x14, 0x27, 0x6b, 0xa1, 0xa4, 0x06,
+		0x32, 0xf5, 0xc3, 0xa6, 0xb2, 0xfa, 0x95, 0xdc, 0xe4, 0x13, 0x57, 0x68, 0x17, 0xb8, 0x04, 0x04}
+
+    // From email address
+	FromEmail = "your_email@yoursite.com"
+
+	// Set this to your mailgun information
+	MailGunDomain = "mg.yoursite.com"
+	MailGunAPIKey = "key-1234567890abcdef1234567890abcdef"
+	MailGunPubKey = "pubkey-1234567890abcdef1234567890abcdef"
+}
