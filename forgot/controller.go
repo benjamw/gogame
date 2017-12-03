@@ -7,6 +7,7 @@ import (
 	"github.com/benjamw/golibs/db"
 	"github.com/benjamw/golibs/password"
 	"github.com/benjamw/golibs/random"
+	netcontext "golang.org/x/net/context"
 	"google.golang.org/appengine/delay"
 
 	"github.com/benjamw/gogame/config"
@@ -109,12 +110,14 @@ func ClearTokens(ctx context.Context, email string) (myerr error) {
 var SendForgotEmailDelay = delay.Func("forgot_email", sendForgotEmail)
 
 // SendForgotEmail
-func sendForgotEmail(ctx context.Context, email string, token model.ForgotToken) error {
+func sendForgotEmail(ctx netcontext.Context, email, token string) error {
+	ctx = game.ConvertOldContext(ctx)
+
 	to := make([]string, 0)
 	to = append(to, email)
 
 	params := make(map[string]interface{}, 1)
-	params["token"] = token.Token
+	params["token"] = token
 
 	return mail.FromTemplate(ctx, "forgot", to, params)
 }

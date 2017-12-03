@@ -3,6 +3,7 @@ package forgot
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	gttp "github.com/benjamw/gogame/http"
 	"github.com/benjamw/golibs/db"
@@ -13,7 +14,7 @@ func init() {
 		Methods("POST").
 		Handler(&gttp.JSONHandler{handleForgotPassword})
 
-	gttp.R.Path("/change_password").
+	gttp.R.Path("/change_password/{token:[a-zA-Z0-9]+}").
 		Methods("POST").
 		Handler(&gttp.JSONHandler{handleChangePassword})
 }
@@ -39,7 +40,7 @@ func handleForgotPassword(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if errReply = SendForgotEmailDelay.Call(ctx, email, token); errReply != nil {
+	if errReply = SendForgotEmailDelay.Call(ctx, email, token.Token); errReply != nil {
 		return
 	}
 
@@ -51,11 +52,9 @@ func handleForgotPassword(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 func handleChangePassword(ctx context.Context, w http.ResponseWriter, r *http.Request) (replyRaw interface{}, errReply error) {
-	token := r.FormValue("token")
-	if token == "" {
-		errReply = &gttp.MissingRequiredError{FormElement: "token"}
-		return
-	}
+	token := gttp.GetURLValue(r, "token")
+	token = token + strings.Repeat("-", 64)
+	token = token[:64]
 
 	password := r.FormValue("password")
 	if password == "" {
