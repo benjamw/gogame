@@ -12,6 +12,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 
+	"github.com/benjamw/gogame/config"
 	"github.com/benjamw/gogame/game"
 )
 
@@ -22,9 +23,13 @@ func buildContext(r *http.Request) context.Context {
 }
 
 func updateConfig(r *http.Request) {
-	//if config.RootURL == "" {
-	//	config.RootURL = r.Host
-	//}
+	if config.RootURL == "" {
+		config.RootURL = r.Host
+	}
+
+	if config.Root == "" {
+		config.Root = "."
+	}
 }
 
 func defaultError(err error, errID int32) (httpCode int, errMessage string) {
