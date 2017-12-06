@@ -12,40 +12,52 @@ type Base struct {
 	isNew bool           `datastore:"-"`
 }
 
-func (b *Base) EntityType() string {
+// EntityType returns the struct type used in the datastore
+func (m *Base) EntityType() string {
 	return "BASE"
 }
 
-func (b *Base) GetKey() *datastore.Key {
-	return b.key
+// GetKey returns the datastore key for the struct
+func (m *Base) GetKey() *datastore.Key {
+	return m.key
 }
 
-func (b *Base) SetKey(key *datastore.Key) error {
-	b.key = key
+// SetKey sets the datastore key on the struct
+func (m *Base) SetKey(key *datastore.Key) error {
+	m.key = key
 	return nil
 }
 
-func (b *Base) IsNew() bool {
-	if b.GetKey() == nil {
+// IsNew returns true if this is a new (non-saved) struct
+func (m *Base) IsNew() bool {
+	if m.GetKey() == nil {
 		return true
 	}
-	return b.isNew
+	return m.isNew
 }
 
-func (b *Base) SetIsNew(isNew bool) {
-	b.isNew = isNew
+// SetIsNew sets the isNew flag on the struct
+func (m *Base) SetIsNew(isNew bool) {
+	m.isNew = isNew
 }
 
-func (b *Base) PreSave(ctx context.Context) error {
+// PreSave sets some basic info before continuing on to Save
+// PreSave is called in db.Save, and if an error is returned,
+// will halt saving the struct
+func (m *Base) PreSave(ctx context.Context) error {
 	return nil
 }
 
-func (b *Base) PostSave(ctx context.Context) error {
+// PostSave performs any actions needed after the struct has
+// been saved to the datastore
+func (m *Base) PostSave(ctx context.Context) error {
 	return nil
 }
 
-func (b *Base) PostLoad(ctx context.Context) error {
-	fullKey := b.GetKey()
+// PostLoad performs any actions after the struct has been
+// loaded from the datastore
+func (m *Base) PostLoad(ctx context.Context) error {
+	fullKey := m.GetKey()
 	if fullKey == nil {
 		err := &db.MissingKeyError{}
 		return err
@@ -54,16 +66,21 @@ func (b *Base) PostLoad(ctx context.Context) error {
 	return nil
 }
 
-func (b *Base) Transform(ctx context.Context, pl datastore.PropertyList) error {
+// Transform will alter the datastore struct if needed
+func (m *Base) Transform(ctx context.Context, pl datastore.PropertyList) error {
 	return nil
 }
 
-func (b *Base) PreDelete(ctx context.Context) error {
+// PreDelete performs any tasks need before the struct is
+// deleted from the datastore.
+// PreDelete gets called in db.Delete, and if an error is returned,
+// will halt deletion of the struct
+func (m *Base) PreDelete(ctx context.Context) error {
 	return nil
 }
 
-// Prepare gets a properly sized []db.Model ready for use in LoadMutliX
-func (b *Base) Prepare(num int) []db.Model {
+// Collect gets a properly sized []db.Model ready for use in db.LoadMultiX
+func (m *Base) Collect(num int) []db.Model {
 	return nil
 
 	/* concrete versions should look like the following:
@@ -78,18 +95,19 @@ func (b *Base) Prepare(num int) []db.Model {
 
 	return ml
 
-	// also, see Unprepare below
+	// also, see Scatter below
 
 	*/
 }
 
 /*
 
-A related function to go along with the b.Prepare above
+A related function to go along with the b.Collect above
 but not actually part of the model because it acts on FooList ( []Foo ):
 // replace 'Foo' with the concrete model name
 
-func (l *FooList) Unprepare(ml []db.Model) {
+// Scatter splits the abstract []db.Model into concrete items in FooList
+func (l *FooList) Scatter(ml []db.Model) {
 	*l = make(FooList, 0)
 	for k := range ml {
 		v, ok := ml[k].(*Foo)
