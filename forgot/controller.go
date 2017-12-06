@@ -29,9 +29,11 @@ func CreateToken(ctx context.Context, email string) (token model.ForgotToken, my
 	}
 
 	ft := model.ForgotToken{
-		PlayerKey: pl.GetKey(),
-		Token:     random.Stringnt(64, random.ALPHANUMERIC),
-		Expires:   game.Now(ctx).Add(time.Hour * time.Duration(24*config.FPTokenExpiry)),
+		Token: model.Token{
+			PlayerKey: pl.GetKey(),
+			Token:     random.Stringnt(64, random.ALPHANUMERIC),
+			Expires:   game.Now(ctx).Add(time.Hour * time.Duration(24*config.FPTokenExpiry)),
+		},
 	}
 	myerr = db.Save(ctx, &ft)
 	if myerr != nil {

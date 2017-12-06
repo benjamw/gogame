@@ -137,8 +137,10 @@ func GetDeleteToken(ctx context.Context, plyrID, pass string) (token string, mye
 	}
 
 	dt := model.DeleteToken{
-		PlayerKey: pk,
-		Token:     random.Stringnt(64, random.ALPHANUMERIC),
+		Token: model.Token{
+			PlayerKey: pk,
+			Token:     random.Stringnt(64, random.ALPHANUMERIC),
+		},
 	}
 	dt.ClearExisting(ctx, dt.PlayerKey)
 	myerr = db.Save(ctx, &dt)
@@ -146,7 +148,7 @@ func GetDeleteToken(ctx context.Context, plyrID, pass string) (token string, mye
 		return
 	}
 
-	token = dt.Token
+	token = dt.Token.Token
 
 	return
 }
