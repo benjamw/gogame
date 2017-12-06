@@ -59,6 +59,7 @@ func parseTemplates(template string, params map[string]interface{}) (tpls map[st
 
 	// add some defaults to the param list
 	params["ROOT"] = config.RootURL
+	params["SiteName"] = config.SiteName
 
 	t := make(map[string]string, 0)
 	var result string
