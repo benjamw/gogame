@@ -24,6 +24,11 @@ var (
 
 	/* END Root* VARIABLES */
 
+	/*** Game Settings ***/
+
+	// SiteName is the name of this website
+	SiteName string
+
 	// RoutePriority is the default priority value for mux routes
 	// lower ( > 0 ) is better
 	RoutePriority int
