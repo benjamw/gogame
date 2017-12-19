@@ -274,6 +274,9 @@ func TestByToken(t *testing.T) {
 // CONTROLLER TESTS
 
 // TODO: add these
+func TestDeleteTokenController(t *testing.T) {
+	t.Fatal("delete_token_test not complete")
+}
 
 // HELPER FUNCTIONS
 
