@@ -99,9 +99,8 @@ func TestClearExisting(t *testing.T) {
 	var err error
 	var ft model.ForgotToken
 
-	token := random.Stringn(64)
-
 	player := createPlayer(ctx, t)
+	token := random.Stringn(64)
 
 	// create the proper tokens
 	numTokens := 4
@@ -116,17 +115,17 @@ func TestClearExisting(t *testing.T) {
 		createForgotToken(ctx, t, player2, token)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	ftList := make([]model.ForgotToken, 0)
 	keys, err := datastore.NewQuery(ft.EntityType()).
-		Filter("Token =", token).
+		Filter("Value =", token).
 		KeysOnly().
 		GetAll(ctx, &ftList)
 	if err != nil {
 		t.Fatalf("TestClearExisting first query threw an error. Error: %v", err)
 	}
 	if len(keys) != numTokens+numOtherTokens {
-		t.Fatal("TestClearExisting did not create the proper number of ForgotTokens.")
+		t.Fatalf("TestClearExisting did not create the proper number of ForgotTokens: %d. Wanted: %d", len(keys), numTokens+numOtherTokens)
 	}
 
 	// test proper
@@ -144,10 +143,10 @@ func TestClearExisting(t *testing.T) {
 		datastore.Get(ctx, v, &getForgotToken)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	ftList = make([]model.ForgotToken, 0)
 	keys, err = datastore.NewQuery(ft.EntityType()).
-		Filter("Token =", token).
+		Filter("Value =", token).
 		KeysOnly().
 		GetAll(ctx, &ftList)
 	if err != nil {
@@ -178,7 +177,7 @@ func TestClearExpired(t *testing.T) {
 		createRandForgotTokenForPlayer(ctx, t, player)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	ftList := make([]model.ForgotToken, 0)
 	keys, err := datastore.NewQuery(ft.EntityType()).
 		Ancestor(player.GetKey()).
@@ -206,7 +205,7 @@ func TestClearExpired(t *testing.T) {
 		datastore.Get(ctx, v, &getForgotToken)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	ftList = make([]model.ForgotToken, 0)
 	keys, err = datastore.NewQuery(ft.EntityType()).
 		Ancestor(player.GetKey()).
@@ -255,7 +254,7 @@ func TestByEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ForgotToken.ByEmail threw an error: %v", err)
 	}
-	if testToken.Token != ft.Token {
+	if testToken.Value != ft.Value {
 		t.Fatal("ForgotToken.ByEmail returned the wrong ForgotToken.")
 	}
 
@@ -278,12 +277,12 @@ func TestByToken(t *testing.T) {
 	token := random.Stringn(64)
 
 	// test with no tokens
-	err = ft.ByToken(ctx, token)
+	err = ft.ByValue(ctx, token)
 	if err == nil {
-		t.Fatal("ForgotToken.ByToken returned a ForgotToken when none should exist.")
+		t.Fatal("ForgotToken.ByValue returned a ForgotToken when none should exist.")
 	}
 	if _, ok := err.(*db.UnfoundObjectError); !ok {
-		t.Fatalf("ForgotToken.ByToken did not throw an unfound object error when none should exist: Type: %T; Error: %v", err, err)
+		t.Fatalf("ForgotToken.ByValue did not throw an unfound object error when none should exist: Type: %T; Error: %v", err, err)
 	}
 
 	player := createPlayer(ctx, t)
@@ -291,32 +290,32 @@ func TestByToken(t *testing.T) {
 	createPastToken(ctx, t, player)
 
 	// test with expired token
-	err = ft.ByToken(ctx, email)
+	err = ft.ByValue(ctx, email)
 	if err == nil {
-		t.Fatal("ForgotToken.ByToken returned a ForgotToken when none should exist (Expired).")
+		t.Fatal("ForgotToken.ByValue returned a ForgotToken when none should exist (Expired).")
 	}
 	if _, ok := err.(*db.UnfoundObjectError); !ok {
-		t.Fatalf("ForgotToken.ByToken did not throw an unfound object error with an expired token: Type: %T; Error: %v", err, err)
+		t.Fatalf("ForgotToken.ByValue did not throw an unfound object error with an expired token: Type: %T; Error: %v", err, err)
 	}
 
 	createForgotToken(ctx, t, player, token)
 
 	// test proper
-	err = ft.ByToken(ctx, token)
+	err = ft.ByValue(ctx, token)
 	if err != nil {
-		t.Fatalf("ForgotToken.ByToken threw an error: %v", err)
+		t.Fatalf("ForgotToken.ByValue threw an error: %v", err)
 	}
-	if token != ft.Token {
-		t.Fatal("ForgotToken.ByToken returned the wrong ForgotToken.")
+	if token != ft.Value {
+		t.Fatal("ForgotToken.ByValue returned the wrong ForgotToken.")
 	}
 
 	createForgotToken(ctx, t, player, token)
 
 	// test with too many tokens
 	var ft2 model.ForgotToken
-	err = ft2.ByToken(ctx, token)
+	err = ft2.ByValue(ctx, token)
 	if _, ok := err.(*game.MultipleObjectError); !ok {
-		t.Fatalf("ForgotToken.ByToken returned the wrong error when two matched ForgotTokens existed. Got: %T '%v'", err, err)
+		t.Fatalf("ForgotToken.ByValue returned the wrong error when two matched ForgotTokens existed. Got: %T '%v'", err, err)
 	}
 }
 
@@ -353,7 +352,7 @@ func TestCreateToken(t *testing.T) {
 	}
 
 	// make sure it's correct
-	if ft.Token != token.Token {
+	if ft.Value != token.Value {
 		t.Fatal("ForgotToken.ByEmail somehow returned an incorrect token.")
 	}
 }
@@ -363,10 +362,9 @@ func TestTestToken(t *testing.T) {
 	ctx := test.GetCtx()
 	var err error
 
-	token := random.Stringn(63)
+	token := random.Stringn(64)
 
 	player1 := createPlayer(ctx, t)
-
 	token1 := createForgotToken(ctx, t, player1, token)
 
 	err = db.Delete(ctx, &player1)
@@ -439,7 +437,7 @@ func TestTokenChangePassword(t *testing.T) {
 	ft = createPastToken(ctx, t, player)
 
 	// test with expired token
-	err = TokenChangePassword(ctx, ft.Token, newPass)
+	err = TokenChangePassword(ctx, ft.Value, newPass)
 	if err == nil {
 		t.Fatal("TokenChangePassword did not throw an error with an expired token.")
 	}
@@ -452,10 +450,13 @@ func TestTokenChangePassword(t *testing.T) {
 		t.Fatal("TokenChangePassword changed the password with an expired token.")
 	}
 
-	// run a manual query to prevent .ByToken from clearing it out
+	// sleep to make the sure the ClearExisting actions became consistent
+	time.Sleep(1 * time.Second)
+
+	// run a manual query to prevent .ByValue from clearing it out
 	ftList := make([]model.ForgotToken, 0)
 	keys, err := datastore.NewQuery(ft.EntityType()).
-		Filter("Token =", ft.Token).
+		Filter("Value =", ft.Value).
 		GetAll(ctx, &ftList)
 	if err != nil {
 		t.Fatalf("TestTokenChangePassword first query threw an error. Error: %v", err)
@@ -471,7 +472,7 @@ func TestTokenChangePassword(t *testing.T) {
 	ft = createRandForgotTokenForPlayer(ctx, t, player)
 
 	// test with one valid and one expired token
-	err = TokenChangePassword(ctx, ft.Token, newPass)
+	err = TokenChangePassword(ctx, ft.Value, newPass)
 	if err != nil {
 		t.Fatalf("TokenChangePassword threw an error. Error: %v", err)
 	}
@@ -484,10 +485,10 @@ func TestTokenChangePassword(t *testing.T) {
 		t.Fatal("TokenChangePassword did not change the password.")
 	}
 
-	// run a manual query to prevent .ByToken from clearing it out
+	// run a manual query to prevent .ByValue from clearing it out
 	ftList = make([]model.ForgotToken, 0)
 	keys, err = datastore.NewQuery(ft.EntityType()).
-		Filter("Token =", ft.Token).
+		Filter("Value =", ft.Value).
 		GetAll(ctx, &ftList)
 	if err != nil {
 		t.Fatalf("TestTokenChangePassword second query threw an error. Error: %v", err)
@@ -541,12 +542,12 @@ func TestSendForgotEmail(t *testing.T) {
 	config.GenRoot()
 	config.RootURL = "UNIT_TESTING"
 
-	token := random.Stringn(10)
+	token := random.Stringn(64)
 
 	player := createPlayer(ctx, t)
 	ft = createForgotToken(ctx, t, player, token)
 
-	err = sendForgotEmail(ctx, email, ft)
+	err = sendForgotEmail(ctx, email, ft.Value)
 	if err != nil {
 		t.Fatalf("sendForgotEmail threw an error. Error: %v", err)
 	}
@@ -584,7 +585,7 @@ func createFullForgotToken(ctx context.Context, t *testing.T, playerKey *datasto
 	thing := model.ForgotToken{
 		PlayerKey: playerKey,
 		Expires:   expires,
-		Token:     token,
+		Value:     token,
 	}
 
 	if err := db.Save(ctx, &thing); err != nil {
@@ -602,16 +603,16 @@ func createFullForgotToken(ctx context.Context, t *testing.T, playerKey *datasto
 }
 
 func createPlayer(ctx context.Context, t *testing.T) model.Player {
-	username := random.Stringn(64)
-	passwrd := random.Stringn(64)
+	username := random.Stringn(10)
+	passwrd := random.Stringn(10)
 
 	return createFullPlayer(ctx, t, username, email, passwrd)
 }
 
 func createRandPlayer(ctx context.Context, t *testing.T) model.Player {
-	username := random.Stringn(64)
+	username := random.Stringn(10)
 	email := random.Email()
-	passwrd := random.Stringn(64)
+	passwrd := random.Stringn(10)
 
 	return createFullPlayer(ctx, t, username, email, passwrd)
 }

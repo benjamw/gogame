@@ -23,20 +23,16 @@ func CreateToken(ctx context.Context, email string) (token model.ForgotToken, my
 	}
 
 	pl := model.Player{}
-	myerr = pl.ByEmail(ctx, email)
-	if myerr != nil {
+	if myerr = pl.ByEmail(ctx, email); myerr != nil {
 		return
 	}
 
 	ft := model.ForgotToken{
-		Token: model.Token{
-			PlayerKey: pl.GetKey(),
-			Token:     random.Stringnt(64, random.ALPHANUMERIC),
-			Expires:   game.Now(ctx).Add(time.Hour * time.Duration(24*config.FPTokenExpiry)),
-		},
+		PlayerKey: pl.GetKey(),
+		Value:     random.Stringnt(64, random.ALPHANUMERIC),
+		Expires:   game.Now(ctx).Add(time.Hour * time.Duration(24*config.FPTokenExpiry)),
 	}
-	myerr = db.Save(ctx, &ft)
-	if myerr != nil {
+	if myerr = db.Save(ctx, &ft); myerr != nil {
 		return
 	}
 
@@ -48,8 +44,7 @@ func CreateToken(ctx context.Context, email string) (token model.ForgotToken, my
 // TestToken tests the given token and returns the player associated with it if found
 func TestToken(ctx context.Context, token string) (pl model.Player, myerr error) {
 	var ft model.ForgotToken
-
-	if myerr = ft.ByToken(ctx, token); myerr != nil {
+	if myerr = ft.ByValue(ctx, token); myerr != nil {
 		return
 	}
 
@@ -77,8 +72,7 @@ func TokenChangePassword(ctx context.Context, token string, pass string) (myerr 
 	}
 
 	pl.PasswordHash = password.Encode(pass)
-	myerr = db.Save(ctx, &pl)
-	if myerr != nil {
+	if myerr = db.Save(ctx, &pl); myerr != nil {
 		return
 	}
 
@@ -91,8 +85,7 @@ func TokenChangePassword(ctx context.Context, token string, pass string) (myerr 
 func ClearTokens(ctx context.Context, email string) (myerr error) {
 	var pl model.Player
 
-	err := pl.ByEmail(ctx, email)
-	if err != nil {
+	if err := pl.ByEmail(ctx, email); err != nil {
 		myerr = &db.UnfoundObjectError{
 			EntityType: pl.EntityType(),
 			Key:        "email",

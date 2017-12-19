@@ -40,7 +40,7 @@ func handleForgotPassword(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if errReply = SendForgotEmailDelay.Call(ctx, email, token.Token); errReply != nil {
+	if errReply = SendForgotEmailDelay.Call(ctx, email, token.Value); errReply != nil {
 		return
 	}
 

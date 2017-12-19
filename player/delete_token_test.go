@@ -116,10 +116,10 @@ func TestClearExisting(t *testing.T) {
 		createDeleteToken(ctx, t, player2, token)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	dtList := make([]model.DeleteToken, 0)
 	keys, err := datastore.NewQuery(dt.EntityType()).
-		Filter("Token =", token).
+		Filter("Value =", token).
 		KeysOnly().
 		GetAll(ctx, &dtList)
 	if err != nil {
@@ -144,10 +144,10 @@ func TestClearExisting(t *testing.T) {
 		datastore.Get(ctx, v, &getDeleteToken)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	dtList = make([]model.DeleteToken, 0)
 	keys, err = datastore.NewQuery(dt.EntityType()).
-		Filter("Token =", token).
+		Filter("Value =", token).
 		KeysOnly().
 		GetAll(ctx, &dtList)
 	if err != nil {
@@ -178,7 +178,7 @@ func TestClearExpired(t *testing.T) {
 		createRandDeleteTokenForPlayer(ctx, t, player)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	dtList := make([]model.DeleteToken, 0)
 	keys, err := datastore.NewQuery(dt.EntityType()).
 		Ancestor(player.GetKey()).
@@ -206,7 +206,7 @@ func TestClearExpired(t *testing.T) {
 		datastore.Get(ctx, v, &getDeleteToken)
 	}
 
-	// do a manual selection here because .ByToken fails if more than one found
+	// do a manual selection here because .ByValue fails if more than one found
 	dtList = make([]model.DeleteToken, 0)
 	keys, err = datastore.NewQuery(dt.EntityType()).
 		Ancestor(player.GetKey()).
@@ -229,12 +229,12 @@ func TestByToken(t *testing.T) {
 	token := random.Stringn(64)
 
 	// test with no tokens
-	err = dt.ByToken(ctx, token)
+	err = dt.ByValue(ctx, token)
 	if err == nil {
-		t.Fatal("DeleteToken.ByToken returned a DeleteToken when none should exist.")
+		t.Fatal("DeleteToken.ByValue returned a DeleteToken when none should exist.")
 	}
 	if _, ok := err.(*db.UnfoundObjectError); !ok {
-		t.Fatalf("DeleteToken.ByToken did not throw an unfound object error when none should exist: Type: %T; Error: %v", err, err)
+		t.Fatalf("DeleteToken.ByValue did not throw an unfound object error when none should exist: Type: %T; Error: %v", err, err)
 	}
 
 	player := createPlayer(ctx, t)
@@ -242,32 +242,32 @@ func TestByToken(t *testing.T) {
 	createPastToken(ctx, t, player)
 
 	// test with expired token
-	err = dt.ByToken(ctx, email)
+	err = dt.ByValue(ctx, email)
 	if err == nil {
-		t.Fatal("DeleteToken.ByToken returned a DeleteToken when none should exist (Expired).")
+		t.Fatal("DeleteToken.ByValue returned a DeleteToken when none should exist (Expired).")
 	}
 	if _, ok := err.(*db.UnfoundObjectError); !ok {
-		t.Fatalf("DeleteToken.ByToken did not throw an unfound object error with an expired token: Type: %T; Error: %v", err, err)
+		t.Fatalf("DeleteToken.ByValue did not throw an unfound object error with an expired token: Type: %T; Error: %v", err, err)
 	}
 
 	createDeleteToken(ctx, t, player, token)
 
 	// test proper
-	err = dt.ByToken(ctx, token)
+	err = dt.ByValue(ctx, token)
 	if err != nil {
-		t.Fatalf("DeleteToken.ByToken threw an error: %v", err)
+		t.Fatalf("DeleteToken.ByValue threw an error: %v", err)
 	}
-	if token != dt.Token {
-		t.Fatal("DeleteToken.ByToken returned the wrong DeleteToken.")
+	if token != dt.Value {
+		t.Fatal("DeleteToken.ByValue returned the wrong DeleteToken.")
 	}
 
 	createDeleteToken(ctx, t, player, token)
 
 	// test with too many tokens
 	var dt2 model.DeleteToken
-	err = dt2.ByToken(ctx, token)
+	err = dt2.ByValue(ctx, token)
 	if _, ok := err.(*game.MultipleObjectError); !ok {
-		t.Fatalf("DeleteToken.ByToken returned the wrong error when two matched DeleteTokens existed. Got: %T '%v'", err, err)
+		t.Fatalf("DeleteToken.ByValue returned the wrong error when two matched DeleteTokens existed. Got: %T '%v'", err, err)
 	}
 }
 
@@ -305,7 +305,7 @@ func createFullDeleteToken(ctx context.Context, t *testing.T, playerKey *datasto
 	thing := model.DeleteToken{
 		PlayerKey: playerKey,
 		Expires:   expires,
-		Token:     token,
+		Value:     token,
 	}
 
 	if err := db.Save(ctx, &thing); err != nil {
