@@ -16,19 +16,19 @@ import (
 )
 
 // Register a new user with the given credentials
-func Register(ctx context.Context, username, email, pass string) (p model.Player, e error) {
+func Register(ctx context.Context, username, email, pass string) (p model.Player, myerr error) {
 	hooks.Do("PreRegister", ctx, username, email, pass)
 
 	p = model.Player{}
-	e = p.ByEmail(ctx, email)
-	if _, ok := e.(*db.UnfoundObjectError); !ok {
+	myerr = p.ByEmail(ctx, email)
+	if _, ok := myerr.(*db.UnfoundObjectError); !ok {
 		// check the login
-		if p, _, err := Login(ctx, email, pass); err == nil {
-			return p, nil
+		if p, _, myerr = Login(ctx, email, pass); myerr == nil {
+			return
 		}
 
-		if e == nil {
-			e = &game.AccountExistsError{
+		if myerr == nil {
+			myerr = &game.AccountExistsError{
 				Email: email,
 			}
 		}
@@ -38,8 +38,7 @@ func Register(ctx context.Context, username, email, pass string) (p model.Player
 		return
 	}
 
-	e = password.Validate(pass)
-	if e != nil {
+	if myerr = password.Validate(pass); myerr != nil {
 		p = model.Player{}
 
 		return
@@ -49,8 +48,7 @@ func Register(ctx context.Context, username, email, pass string) (p model.Player
 	p.Email = email
 	p.PasswordHash = password.Encode(pass)
 
-	e = db.Save(ctx, &p)
-	if e != nil {
+	if myerr = db.Save(ctx, &p); myerr != nil {
 		p = model.Player{}
 
 		return
@@ -62,15 +60,15 @@ func Register(ctx context.Context, username, email, pass string) (p model.Player
 }
 
 // Login the user with the given credentials
-func Login(ctx context.Context, email, pass string) (p model.Player, s session.Data, e error) {
+func Login(ctx context.Context, email, pass string) (p model.Player, s session.Data, myerr error) {
 	p = model.Player{}
-	e = p.ByEmail(ctx, email)
-	if e != nil {
-		e = &game.InvalidCredentialsError{}
+	if myerr = p.ByEmail(ctx, email); myerr != nil {
+		myerr = &game.InvalidCredentialsError{}
 	}
 
 	if !password.Compare(p.PasswordHash, pass) {
-		e = &game.InvalidCredentialsError{}
+		myerr = &game.InvalidCredentialsError{}
+
 		return
 	}
 
@@ -83,11 +81,13 @@ func Login(ctx context.Context, email, pass string) (p model.Player, s session.D
 }
 
 // Update an existing user with the given information
-func Update(ctx context.Context, oldEmail, oldPass, newEmail, newPass string) (model.Player, error) {
+func Update(ctx context.Context, oldEmail, oldPass, newEmail, newPass string) (p model.Player, myerr error) {
 	// test password
-	p, _, myerr := Login(ctx, oldEmail, oldPass)
+	p, _, myerr = Login(ctx, oldEmail, oldPass)
 	if myerr != nil {
-		return model.Player{}, myerr
+		p = model.Player{}
+
+		return
 	}
 
 	if oldEmail != newEmail {
@@ -99,7 +99,9 @@ func Update(ctx context.Context, oldEmail, oldPass, newEmail, newPass string) (m
 				}
 			}
 
-			return model.Player{}, myerr
+			p = model.Player{}
+
+			return
 		}
 	}
 
@@ -111,44 +113,40 @@ func Update(ctx context.Context, oldEmail, oldPass, newEmail, newPass string) (m
 		p.PasswordHash = password.Encode(newPass)
 	}
 
-	myerr = db.Save(ctx, &p)
-	if myerr != nil {
-		return model.Player{}, myerr
+	if myerr = db.Save(ctx, &p); myerr != nil {
+		p = model.Player{}
+
+		return
 	}
 
 	hooks.Do("Update", ctx, old, p, newPass)
 
-	return p, myerr
+	return
 }
 
 // GetDeleteToken creates a token for use when deleting an account
 func GetDeleteToken(ctx context.Context, plyrID, pass string) (token string, myerr error) {
 	var old model.Player
-	_, myerr = db.LoadS(ctx, plyrID, &old)
-	if myerr != nil {
+	if _, myerr = db.LoadS(ctx, plyrID, &old); myerr != nil {
 		return
 	}
 	pk := old.GetKey()
 
 	// test password
-	_, _, myerr = Login(ctx, old.Email, pass)
-	if myerr != nil {
+	if _, _, myerr = Login(ctx, old.Email, pass); myerr != nil {
 		return
 	}
 
 	dt := model.DeleteToken{
-		Token: model.Token{
-			PlayerKey: pk,
-			Token:     random.Stringnt(64, random.ALPHANUMERIC),
-		},
+		PlayerKey: pk,
+		Value:     random.Stringnt(64, random.ALPHANUMERIC),
 	}
 	dt.ClearExisting(ctx, dt.PlayerKey)
-	myerr = db.Save(ctx, &dt)
-	if myerr != nil {
+	if myerr = db.Save(ctx, &dt); myerr != nil {
 		return
 	}
 
-	token = dt.Token.Token
+	token = dt.Value
 
 	return
 }
@@ -156,14 +154,12 @@ func GetDeleteToken(ctx context.Context, plyrID, pass string) (token string, mye
 // Delete the user with the given token
 func Delete(ctx context.Context, plyrID, token string) (myerr error) {
 	var old model.Player
-	_, myerr = db.LoadS(ctx, plyrID, &old)
-	if myerr != nil {
+	if _, myerr = db.LoadS(ctx, plyrID, &old); myerr != nil {
 		return
 	}
 
 	dt := model.DeleteToken{}
-	myerr = dt.ByToken(ctx, token)
-	if myerr != nil {
+	if myerr = dt.ByValue(ctx, token); myerr != nil {
 		return
 	}
 
@@ -174,8 +170,7 @@ func Delete(ctx context.Context, plyrID, token string) (myerr error) {
 	dt.ClearExisting(ctx, dt.PlayerKey)
 
 	p := old
-	myerr = db.Delete(ctx, &p)
-	if myerr != nil {
+	if myerr = db.Delete(ctx, &p); myerr != nil {
 		return
 	}
 
