@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	email = "benjamwelker@gmail.com" // set this to a valid email address for the send email test
+	email = config.TestToEmail
 )
 
 func TestMain(m *testing.M) {

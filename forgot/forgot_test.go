@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	email  = "benjam@iohelix.net"                          // set this to a valid email address for the send email test
+	email  = config.TestToEmail                            // set this to a valid email address for the send email test
 	expiry = time.Now().Add(time.Hour * time.Duration(24)) // 24 hours from now
 )
 

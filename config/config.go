@@ -38,6 +38,10 @@ var (
 	// FromEmail the email address to send from
 	FromEmail string
 
+	// TestToEmail the email address to send emails to when testing
+	// This email address needs to be whitelisted in the MailGun Sandbox subdomain
+	TestToEmail string
+
 	/*** MailGun Settings ***/
 
 	// MailGunDomain is the domain to use for MailGun
