@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/benjamw/golibs/random"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 
@@ -47,8 +46,7 @@ func defaultError(err error, errID int32) (httpCode int, errMessage string) {
 }
 
 func processError(ctx context.Context, err error) (httpCode int, errMessage string) {
-	randSrc := rand.NewSource(time.Now().UnixNano())
-	errID := rand.New(randSrc).Int31()
+	errID := random.Int31()
 	errMessage = fmt.Sprintf("%v (%d)", err, errID)
 
 	log.Errorf(ctx, "error (%d): %v", errID, err)
