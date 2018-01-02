@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -33,12 +31,12 @@ func (m *DeleteToken) EntityType() string {
 func (m *DeleteToken) PreSave(ctx context.Context) error {
 	if m.GetKey() == nil {
 		if m.PlayerKey == nil {
-			return errors.New("missing parent player key")
+			return &db.MissingParentKeyError{}
 		}
 		m.SetIsNew(true)
 		m.SetKey(datastore.NewIncompleteKey(ctx, m.EntityType(), m.PlayerKey))
 	} else {
-		return fmt.Errorf("cannot edit existing token")
+		return &EditingExistingTokenError{}
 	}
 
 	if m.Expires.IsZero() {

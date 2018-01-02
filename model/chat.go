@@ -2,9 +2,9 @@ package model
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/benjamw/golibs/db"
 	"google.golang.org/appengine/datastore"
 
 	"github.com/benjamw/gogame/game"
@@ -29,7 +29,7 @@ func (m *Chat) EntityType() string {
 func (m *Chat) PreSave(ctx context.Context) error {
 	if m.GetKey() == nil {
 		if m.RoomKey == nil {
-			return errors.New("missing parent room key")
+			return &db.MissingParentKeyError{}
 		}
 
 		m.SetIsNew(true)
@@ -37,11 +37,11 @@ func (m *Chat) PreSave(ctx context.Context) error {
 	}
 
 	if m.PlayerKey == nil {
-		return errors.New("missing player key")
+		return &db.MissingRequiredError{"PlayerKey"}
 	}
 
 	if m.Message == "" {
-		return errors.New("message is empty")
+		return &db.MissingRequiredError{"Message"}
 	}
 
 	if m.Created.IsZero() {

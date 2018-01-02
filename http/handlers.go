@@ -200,7 +200,7 @@ func prepSession(r *http.Request, cookieName string) (ctx context.Context, s ses
 	ctx = PrepHandler(r)
 
 	if cookieName != PlayerCookieName {
-		err = fmt.Errorf("unknown cookie encountered: \"%s\"", cookieName)
+		err = fmt.Errorf("unknown cookie encountered: '%s'", cookieName)
 		return
 	}
 
