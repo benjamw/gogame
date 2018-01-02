@@ -22,6 +22,18 @@ func init() {
 	gttp.R.Path("/room/{id:[0-9]+}/after/{time:[0-9]+}").
 		Methods("GET").
 		Handler(&gttp.PlayerJSONHandler{handleLatest})
+
+	gttp.R.Path("/muted").
+		Methods("GET").
+		Handler(&gttp.PlayerJSONHandler{handleMuted})
+
+	gttp.R.Path("/mute").
+		Methods("POST").
+		Handler(&gttp.PlayerJSONHandler{handleMute})
+
+	gttp.R.Path("/unmute").
+		Methods("POST").
+		Handler(&gttp.PlayerJSONHandler{handleUnmute})
 }
 
 type Reply struct {
@@ -43,8 +55,6 @@ func (r *Reply) Set(m model.Chat) {
 
 func handleAdd(ctx context.Context, s session.Data, w http.ResponseWriter, r *http.Request) (replyRaw interface{}, errReply error) {
 	roomID := gttp.GetURLValue(r, "id")
-
-	r.FormValue("")
 
 	message := r.FormValue("message")
 	if message == "" {
@@ -140,6 +150,90 @@ func handleLatest(ctx context.Context, s session.Data, w http.ResponseWriter, r 
 	}
 	reply.Set(room)
 	reply.SetChats(chats)
+
+	replyRaw = reply
+
+	return
+}
+
+type MuteReply struct {
+	gttp.Response
+	MutedID string `json:"muted_id"`
+}
+
+func (r *MuteReply) Set(mute model.Mute) {
+	r.MutedID = mute.MutedKey.Encode()
+}
+
+type MutedReply struct {
+	Muted []MuteReply `json:"muted"`
+}
+
+func (r *MutedReply) Set(muted model.MuteList) {
+	r.Muted = make([]MuteReply, len(muted))
+
+	for k, v := range muted {
+		r.Muted[k].Set(v)
+	}
+}
+
+func handleMuted(ctx context.Context, s session.Data, w http.ResponseWriter, r *http.Request) (replyRaw interface{}, errReply error) {
+	var mutes model.MuteList
+	mutes, errReply = GetMuted(ctx, s.PlayerID)
+	if errReply != nil {
+		return
+	}
+
+	reply := MutedReply{}
+	reply.Set(mutes)
+
+	replyRaw = reply
+
+	return
+}
+
+func handleMute(ctx context.Context, s session.Data, w http.ResponseWriter, r *http.Request) (replyRaw interface{}, errReply error) {
+	mutedID := r.FormValue("muted_id")
+	if mutedID == "" {
+		errReply = &gttp.MissingRequiredError{FormElement: "muted_id"}
+		return
+	}
+
+	var mute model.Mute
+	mute, errReply = Mute(ctx, s.PlayerID, mutedID)
+	if errReply != nil {
+		return
+	}
+
+	reply := MuteReply{
+		Response: gttp.Response{
+			Success: true,
+		},
+	}
+	reply.Set(mute)
+
+	replyRaw = reply
+
+	return
+}
+
+func handleUnmute(ctx context.Context, s session.Data, w http.ResponseWriter, r *http.Request) (replyRaw interface{}, errReply error) {
+	mutedID := r.FormValue("muted_id")
+	if mutedID == "" {
+		errReply = &gttp.MissingRequiredError{FormElement: "muted_id"}
+		return
+	}
+
+	errReply = Unmute(ctx, s.PlayerID, mutedID)
+	if errReply != nil {
+		return
+	}
+
+	reply := MuteReply{
+		Response: gttp.Response{
+			Success: true,
+		},
+	}
 
 	replyRaw = reply
 

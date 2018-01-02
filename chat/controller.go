@@ -7,6 +7,7 @@ import (
 
 	"github.com/benjamw/gogame/config"
 	"github.com/benjamw/golibs/db"
+	"google.golang.org/appengine/datastore"
 
 	"github.com/benjamw/gogame/model"
 )
@@ -89,6 +90,70 @@ func GetChatsAfter(ctx context.Context, roomID string, after time.Time) (room mo
 		chats = model.ChatList{}
 
 		return
+	}
+
+	return
+}
+
+// GetMuted returns a list of all the players the given player has muted
+func GetMuted(ctx context.Context, playerID string) (mutes model.MuteList, myerr error) {
+	var playerKey *datastore.Key
+	if playerKey, myerr = datastore.DecodeKey(playerID); myerr != nil {
+		return
+	}
+
+	var ml model.MuteList
+	if _, myerr = ml.ByPlayer(ctx, playerKey); myerr != nil {
+		return
+	}
+
+	mutes = ml
+
+	return
+}
+
+// Mute the given player
+func Mute(ctx context.Context, playerID, mutedID string) (mute model.Mute, myerr error) {
+	var playerKey, mutedKey *datastore.Key
+	if playerKey, myerr = datastore.DecodeKey(playerID); myerr != nil {
+		return
+	}
+	if mutedKey, myerr = datastore.DecodeKey(mutedID); myerr != nil {
+		return
+	}
+
+	m := model.Mute{
+		PlayerKey: playerKey,
+		MutedKey:  mutedKey,
+	}
+	if myerr = db.Save(ctx, &m); myerr != nil {
+		return
+	}
+
+	mute = m
+
+	return
+}
+
+// Unmute the given player
+func Unmute(ctx context.Context, playerID, mutedID string) (myerr error) {
+	var playerKey, mutedKey *datastore.Key
+	if playerKey, myerr = datastore.DecodeKey(playerID); myerr != nil {
+		return
+	}
+	if mutedKey, myerr = datastore.DecodeKey(mutedID); myerr != nil {
+		return
+	}
+
+	var ml model.MuteList
+
+	ml.ByPlayer(ctx, playerKey)
+
+	for _, v := range ml {
+		if v.MutedKey == mutedKey {
+			myerr = db.Delete(ctx, &v)
+			break
+		}
 	}
 
 	return
