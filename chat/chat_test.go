@@ -37,18 +37,39 @@ func TestChatPreSave(t *testing.T) {
 	var err error
 	var c model.Chat
 
-	// test with no room
+	t.Fatal("Break this into four functions, each testing a different missing part, and the fourth testing a proper chat")
+
+	// test with no room or player
 	if err = c.PreSave(ctx); err == nil {
-		t.Fatal("Chat.PreSave did not throw an error for missing Parent Room Key when one should not exist.")
+		t.Fatal("Chat.PreSave did not throw an error for missing Room and Player Keys and Message when they should not exist.")
 	}
 
 	room := createRandRoom(ctx, t)
 
 	// test with no player
-	c.PlayerKey = room.GetKey()
-	if err = c.PreSave(ctx); err != nil {
-		t.Fatal("Chat.PreSave threw an error for missing Parent Room Key when one should exist.")
+	c.RoomKey = room.GetKey()
+	if err = c.PreSave(ctx); err == nil {
+		t.Fatal("Chat.PreSave did not throw an error when Player Key should not exist.")
+	} else if e, ok := err.(*db.MissingRequiredError); ok && e.Property != "PlayerKey" {
+		t.Fatalf("Chat.PreSave threw the wrong MissingRequiredError. Wanted: %s, Got: %s", "PlayerKey", e.Property)
+	} else if _, ok := err.(*db.MissingRequiredError); !ok {
+		t.Fatalf("Chat.PreSave threw the wrong Error for missing PlayerKey. %t: %v", err, err)
 	}
+
+	player := createRandPlayer(ctx, t)
+
+	// test with no room
+	c.RoomKey = nil
+	c.PlayerKey = player.GetKey()
+	if err = c.PreSave(ctx); err == nil {
+		t.Fatal("Chat.PreSave did not throw an error when missing Room Key should not exist.")
+	} else if e, ok := err.(*db.MissingRequiredError); ok && e.Property != "RoomKey" {
+		t.Fatalf("Chat.PreSave did not throw the wrong MissingRequiredError. Wanted: %s, Got: %s", "RoomKey", e.Property)
+	} else if _, ok := err.(*db.MissingRequiredError); !ok {
+		t.Fatalf("Chat.PreSave threw the wrong Error for missing RoomKey. %t: %v", err, err)
+	}
+
+	c.RoomKey = room.GetKey()
 
 	key := c.GetKey()
 	if key == nil {

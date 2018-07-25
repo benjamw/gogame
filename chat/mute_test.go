@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"google.golang.org/appengine/datastore"
 
 	"github.com/benjamw/gogame/model"
@@ -13,10 +14,38 @@ import (
 
 // MODEL TESTS
 
+// TestMain in chat_test.go
+
 func TestMuteEntityType(t *testing.T) {
 	var m model.Chat
 	if "Chat" != m.EntityType() {
 		t.Fatalf("Chat.EntityType() returned '%s', wanted 'Chat'", m.EntityType())
+	}
+}
+
+func TestMutePreSave(t *testing.T) {
+	defer test.ResetDB()
+	ctx := test.GetCtx()
+	var err error
+	var c model.Chat
+
+	// test with no player
+	if err = c.PreSave(ctx); err == nil {
+		t.Fatal("Mute.PreSave did not throw an error for missing Parent Player Key when one should not exist.")
+	}
+
+	player := createRandPlayer(ctx, t)
+
+	// test with no player
+	c.PlayerKey = player.GetKey()
+	if err = c.PreSave(ctx); err != nil {
+		spew.Dump(err)
+		t.Fatal("Mute.PreSave threw an error for missing Parent Player Key when one should exist.")
+	}
+
+	key := c.GetKey()
+	if key == nil {
+		t.Fatal("Mute.PreSave did not create a datastore key.")
 	}
 }
 

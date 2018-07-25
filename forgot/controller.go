@@ -114,5 +114,5 @@ func sendForgotEmail(ctx netcontext.Context, email, token string) error {
 	params := make(map[string]interface{}, 1)
 	params["token"] = token
 
-	return mail.FromTemplate(ctx, "forgot", to, params)
+	return mail.FromTemplate(ctx, "forgot", to, params, nil)
 }

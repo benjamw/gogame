@@ -8,7 +8,7 @@ import (
 
 	// instead of adding all the endpoints here
 	// add them to the initializer so `app` can be imported
-	// into various child modules without causing a possible
+	// into various child modules without causing possible
 	// cyclic dependencies
 	_ "github.com/benjamw/gogame/initializer"
 )

@@ -22,18 +22,20 @@ var (
 )
 
 // FromTemplate reads the template from settings and sends the email
-func FromTemplate(ctx context.Context, template string, to []string, params map[string]interface{}) error {
+func FromTemplate(ctx context.Context, template string, to []string, params map[string]interface{}, mg mailgun.Mailgun) error {
 	tpls, err := parseTemplates(template, params)
 	if err != nil {
 		return err
 	}
 
-	return Send(ctx, config.FromEmail, to, tpls["subject.hbs"], tpls["text.hbs"], tpls["html.hbs"])
+	return Send(ctx, config.FromEmail, to, tpls["subject.hbs"], tpls["text.hbs"], tpls["html.hbs"], mg)
 }
 
 // Send an email
-func Send(ctx context.Context, from string, to []string, subj string, plain string, html string) (myerr error) {
-	mg := initMailgun(ctx)
+func Send(ctx context.Context, from string, to []string, subj string, plain string, html string, mg mailgun.Mailgun) (myerr error) {
+	if mg == nil {
+		mg = initMailgun(ctx)
+	}
 
 	message := mg.NewMessage(from, subj, plain, to...)
 

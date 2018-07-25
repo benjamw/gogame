@@ -1,0 +1,73 @@
+
+- fix issues with handlebars and make sure those work right
+- finish up the tests
+- create outside endpoint tests and test all endpoints
+
+- see about adding tests for the handlers using funky mocks and interfaces and other wonky go testing stuff...
+    see https://nathanleclaire.com/blog/2015/10/10/interfaces-and-composition-for-effective-unit-testing-in-golang/
+    for more information
+
+
+
+
+Build a base game module that has the base player and chat built in
+Maybe even have the base admin page, and menu built in, with some way
+of adding elements to the menu, with an order value to position elements
+Maybe with the hook system?
+Maybe other modules that are cloned between games...
+
+- Build single player system to cohabitate with GoRisk and any other Go games
+This may need to be it's own service, and the games will have to hit it's API
+and extend the data from there. Not sure exactly how to integrate all the games
+into one system without actually using one system.
+    - Struct
+        - Username (string)
+        - Email (string)
+        - Password (string)
+        - Timezone (time.Location)
+        - IsAdmin (bool)
+        - Created (time.Time)
+        - Approved (time.Time)
+    - Actions
+        - Register
+        - Login
+        - Edit (Profile)
+        - Logout
+        - Delete
+        - Forgot Password
+        - Change Password with FP Token
+
+- Chat system
+    - Lobby for each game is it's own room
+    - When game is created, a chat room is automatically created with the same ID
+    - If a chat comes in for room #0, and no room exists, create room #0, but no others
+    - Muting certain players?
+    - Fade-out time, so old chat doesn't stay visible forever?
+
+    - Room struct
+        - Name (string) [ matches the game name, or "Lobby" for lobby ID:0 ]
+
+    - Message struct
+        - RoomKey (parent) (*datastore.Key)
+        - PlayerKey (*datastore.Key)
+        - Message (string)
+        - Created (time.Time)
+    - Actions
+        - AddMessage (room, message) (player session data)
+        - GetRoomContents (room)
+        - GetLatestInRoom (room, time of last message received)
+
+    - ChatSeen struct
+        - PlayerKey (parent) (*datastore.Key)
+        - RoomKey (*datastore.Key)
+        - LastMessageSeenDate (time.Time)
+        - DateSeen (time.Time)
+    - ChatSeen actions
+        - GetLastSeen (room) (player session data)
+
+    - Mute struct
+        - PlayerKey (parent) (*datastore.Key)
+        - Muted (*datastore.Key)
+    - Mute actions
+        - Mute (player) {create}
+        - Unmute (player) {delete}
